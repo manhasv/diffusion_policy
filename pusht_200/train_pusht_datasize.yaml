@@ -1,0 +1,32 @@
+# Data-size experiment: Push-T lowdim diffusion policy trained on N of our own demos.
+# Inherits everything from the upstream lowdim UNet config; only the keys below change.
+defaults:
+  - train_diffusion_unet_lowdim_workspace
+  - _self_
+
+n_demos: 200
+exp_name: demos${n_demos}
+
+task:
+  dataset:
+    zarr_path: data/pusht_own_200.zarr
+    max_train_episodes: ${n_demos}   # upstream default is 90
+    val_ratio: 0.0                   # train on exactly n_demos episodes
+
+training:
+  seed: 42
+  num_epochs: 1001          # placeholder; set per run after the pilot (k * checkpoint_every + 1)
+  rollout_every: 100        # monitoring only, not used for checkpoint selection
+  checkpoint_every: 100
+
+checkpoint:
+  topk:
+    k: 0                    # no checkpoint selection on test seeds; evaluate latest.ckpt
+
+logging:
+  project: pusht_datasize
+  name: ${exp_name}
+
+hydra:
+  run:
+    dir: data/outputs/pusht_datasize/${exp_name}

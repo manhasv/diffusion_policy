@@ -10,6 +10,9 @@ I collected 200 demonstrations, train with Diffusion Policy on the same architec
 ![Performance vs. number of demonstrations](pusht_200/results.png)
 *Mean reward ± std (shaded) over the same 50 test seeds, each dot is an individual episode*
 
+Video comparison between same seed from 50 demo model vs 200 demo model
+![Same start, 50 vs 200 demos](pusht_200/seed100002_50_vs_200.gif)
+
 | Demos | Mean reward ± std | Success rate |
 |---|---|---|
 | 50 | 0.57 ± 0.45 | 44% (22/50) |
@@ -36,17 +39,17 @@ Data collections was done using the original script `demo_pusht.py`.
 
 ## Training
 
-Config: `pusht_200/train_pusht200.yaml`, which inherits the upstream `train_diffusion_unet_lowdim_workspace.yaml` (+ `task/pusht_lowdim.yaml`) and changes only:
+Config: `pusht_200/train_pusht_200.yaml`, which inherits the upstream `train_diffusion_unet_lowdim_workspace.yaml` (+ `task/pusht_lowdim.yaml`) and changes only:
 - dataset path and `max_train_episodes` (random subset of N demos, subset seed 42);
 - `val_ratio: 0` (train on exactly N demos);
 - step budget: every model gets ~100k gradient steps (batch 256) instead of a fixed number of epochs, so differences reflect data, not amount of training;
 - `checkpoint.topk.k: 0`: the final checkpoint is evaluated (no checkpoint selection on test seeds).
 
 ```console
-$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=50  training.num_epochs=4001 training.checkpoint_every=400 training.rollout_every=400
-$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=100 training.num_epochs=2131 training.checkpoint_every=213 training.rollout_every=213
-$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=150 training.num_epochs=1411 training.checkpoint_every=141 training.rollout_every=141
-$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=200 training.num_epochs=1061 training.checkpoint_every=106 training.rollout_every=106
+$ python train.py --config-dir pusht_200 --config-name train_pusht_200 n_demos=50  training.num_epochs=4001 training.checkpoint_every=400 training.rollout_every=400
+$ python train.py --config-dir pusht_200 --config-name train_pusht_200 n_demos=100 training.num_epochs=2131 training.checkpoint_every=213 training.rollout_every=213
+$ python train.py --config-dir pusht_200 --config-name train_pusht_200 n_demos=150 training.num_epochs=1411 training.checkpoint_every=141 training.rollout_every=141
+$ python train.py --config-dir pusht_200 --config-name train_pusht_200 n_demos=200 training.num_epochs=1061 training.checkpoint_every=106 training.rollout_every=106
 ```
 Trained on an NVIDIA RTX A5000 (Brown Oscar cluster) 
 
@@ -66,6 +69,7 @@ $ python pusht200_plot.py -i pusht_200/eval -o pusht_200/results.png
 ## Limitations
 - One possible limitation is that the data is heavily reliant on the user skills, and familiarity at doing pusht. Variables like idle time, sudden movements or jitter can affect the dataset quality.
 
+---
 
 # Diffusion Policy
 

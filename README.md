@@ -1,3 +1,72 @@
+# Diffusion Policy on PushT accross 4 dataset sizes
+Mini project built on original [Diffusion Policy](https://github.com/real-stanford/diffusion_policy) codebase (Chi et al., 2023). The original README is preserved below.
+I collected 200 demonstrations, train with Diffusion Policy on the same architecture and hyperparameters on 50, 100, 150, and 200 datasize and measure the performance across the dataset size.
+
+[[Checkpoints]](https://huggingface.co/manhasv/diffusion-policy-pusht200)
+[[Dataset]](https://huggingface.co/datasets/manhasv/pusht-200-data)
+
+## Summary
+
+![Performance vs. number of demonstrations](pusht_200/results.png)
+*Mean reward ± std (shaded) over the same 50 test seeds, each dot is an individual episode*
+
+| Demos | Mean reward ± std | Success rate |
+|---|---|---|
+| 50 | 0.57 ± 0.45 | 44% (22/50) |
+| 100 | 0.73 ± 0.42 | 66% (33/50) |
+| 150 | 0.84 ± 0.34 | 74% (37/50) |
+| 200 | 0.88 ± 0.32 | 84% (42/50) |
+
+Overall, performance increases with the dataset size but with diminishing return in later run.
+
+## Setup
+
+```console
+$ conda env create -f conda_environment_pusht.yaml
+$ conda activate robodiff-pusht
+```
+`conda_environment_pusht.yaml` is the upstream `conda_environment.yaml` with the minimum changes needed to build without error. Changes are noted within the new yaml file.
+
+## Data Collection
+
+```console
+$ python demo_pusht.py -o data/pusht_200.zarr
+```
+Data collections was done using the original script `demo_pusht.py`.
+
+## Training
+
+Config: `pusht_200/train_pusht200.yaml`, which inherits the upstream `train_diffusion_unet_lowdim_workspace.yaml` (+ `task/pusht_lowdim.yaml`) and changes only:
+- dataset path and `max_train_episodes` (random subset of N demos, subset seed 42);
+- `val_ratio: 0` (train on exactly N demos);
+- step budget: every model gets ~100k gradient steps (batch 256) instead of a fixed number of epochs, so differences reflect data, not amount of training;
+- `checkpoint.topk.k: 0`: the final checkpoint is evaluated (no checkpoint selection on test seeds).
+
+```console
+$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=50  training.num_epochs=4001 training.checkpoint_every=400 training.rollout_every=400
+$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=100 training.num_epochs=2131 training.checkpoint_every=213 training.rollout_every=213
+$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=150 training.num_epochs=1411 training.checkpoint_every=141 training.rollout_every=141
+$ python train.py --config-dir pusht_200 --config-name train_pusht200 n_demos=200 training.num_epochs=1061 training.checkpoint_every=106 training.rollout_every=106
+```
+Trained on an NVIDIA RTX A5000 (Brown Oscar cluster) 
+
+## Evaluation
+
+```console
+$ for n in 50 100 150 200; do python pusht200_eval.py -c data/outputs/pusht_datasize/demos$n/checkpoints/latest.ckpt -o pusht_200/eval/demos$n; done
+$ python pusht200_plot.py -i pusht_200/eval -o pusht_200/results.png
+```
+`pusht200_eval.py` is upstream `eval.py` plus: a fixed sampling seed (0) so repeated evaluations are identical, test seeds only, and metadata in the output JSON. Each model runs the same 50 test seeds (100000–100049, never used for training), max 300 steps (30 s). Evaluated on an RTX 3070 Ti laptop GPU.
+
+## Observation
+
+- **Outcomes:** The test rewards are skewed towards Failure(0) or Success(1) and little in between where the policy only partially cover the goal. 
+- **Diminishing Returns:** The bigger the dataset, the value it brings lessen at only 0.04 from 150-200.
+
+## Limitations
+- One possible limitation is that the data is heavily reliant on the user skills, and familiarity at doing pusht. Variables like idle time, sudden movements or jitter can affect the dataset quality.
+
+
 # Diffusion Policy
 
 [[Project page]](https://diffusion-policy.cs.columbia.edu/)

@@ -9,7 +9,7 @@ exp_name: demos${n_demos}
 
 task:
   dataset:
-    zarr_path: data/pusht_own_200.zarr
+    zarr_path: data/pusht_200.zarr
     max_train_episodes: ${n_demos}   # upstream default is 90
     val_ratio: 0.0                   # train on exactly n_demos episodes
 
